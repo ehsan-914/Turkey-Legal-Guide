@@ -1,22 +1,35 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Turkiye Consulting Platform API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: consultations
+    description: Consultation request management
+  - name: cases
+    description: Case management
+  - name: messages
+    description: Messaging between clients and admin
+  - name: services
+    description: Services offered
+  - name: documents
+    description: Document management
+  - name: stats
+    description: Dashboard statistics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +37,393 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /consultations:
+    get:
+      operationId: listConsultations
+      tags: [consultations]
+      summary: List all consultation requests (admin only)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, reviewed, converted, rejected]
+        - name: serviceType
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of consultations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Consultation"
+    post:
+      operationId: createConsultation
+      tags: [consultations]
+      summary: Submit a consultation request (public)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateConsultationBody"
+      responses:
+        "201":
+          description: Consultation submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Consultation"
+
+  /consultations/{id}:
+    get:
+      operationId: getConsultation
+      tags: [consultations]
+      summary: Get consultation by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Consultation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Consultation"
+    patch:
+      operationId: updateConsultation
+      tags: [consultations]
+      summary: Update consultation status (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateConsultationBody"
+      responses:
+        "200":
+          description: Updated consultation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Consultation"
+
+  /cases:
+    get:
+      operationId: listCases
+      tags: [cases]
+      summary: List cases
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, pending_documents, in_review, approved, completed, rejected]
+        - name: serviceType
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of cases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Case"
+    post:
+      operationId: createCase
+      tags: [cases]
+      summary: Create a new case (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCaseBody"
+      responses:
+        "201":
+          description: Case created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Case"
+
+  /cases/{id}:
+    get:
+      operationId: getCase
+      tags: [cases]
+      summary: Get case by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Case detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Case"
+    patch:
+      operationId: updateCase
+      tags: [cases]
+      summary: Update case (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCaseBody"
+      responses:
+        "200":
+          description: Updated case
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Case"
+
+  /cases/{id}/messages:
+    get:
+      operationId: listCaseMessages
+      tags: [messages]
+      summary: List messages for a case
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      operationId: createCaseMessage
+      tags: [messages]
+      summary: Send a message on a case
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMessageBody"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /services:
+    get:
+      operationId: listServices
+      tags: [services]
+      summary: List all services
+      responses:
+        "200":
+          description: Services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Create a service (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceBody"
+      responses:
+        "201":
+          description: Service created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+  /services/{id}:
+    patch:
+      operationId: updateService
+      tags: [services]
+      summary: Update a service (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceBody"
+      responses:
+        "200":
+          description: Updated service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+    delete:
+      operationId: deleteService
+      tags: [services]
+      summary: Delete a service (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /stats/admin:
+    get:
+      operationId: getAdminStats
+      tags: [stats]
+      summary: Get admin dashboard statistics
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /stats/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [stats]
+      summary: Get recent activity feed
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /stats/cases-by-service:
+    get:
+      operationId: getCasesByService
+      tags: [stats]
+      summary: Get case counts grouped by service type
+      responses:
+        "200":
+          description: Cases by service
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceCount"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +431,301 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required: [success]
+
+    LoginBody:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required: [username, password]
+
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [admin, client]
+      required: [id, username, name, role]
+
+    Consultation:
+      type: object
+      properties:
+        id:
+          type: integer
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        serviceType:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+          enum: [pending, reviewed, converted, rejected]
+        adminNotes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, fullName, email, phone, serviceType, message, status, createdAt]
+
+    CreateConsultationBody:
+      type: object
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        serviceType:
+          type: string
+        message:
+          type: string
+      required: [fullName, email, phone, serviceType, message]
+
+    UpdateConsultationBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, reviewed, converted, rejected]
+        adminNotes:
+          type: string
+
+    Case:
+      type: object
+      properties:
+        id:
+          type: integer
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        clientPhone:
+          type: string
+        serviceType:
+          type: string
+        status:
+          type: string
+          enum: [active, pending_documents, in_review, approved, completed, rejected]
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        notes:
+          type: string
+          nullable: true
+        progressPercent:
+          type: integer
+        consultationId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, clientName, clientEmail, clientPhone, serviceType, status, priority, progressPercent, createdAt, updatedAt]
+
+    CreateCaseBody:
+      type: object
+      properties:
+        clientName:
+          type: string
+        clientEmail:
+          type: string
+        clientPhone:
+          type: string
+        serviceType:
+          type: string
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        notes:
+          type: string
+        consultationId:
+          type: integer
+      required: [clientName, clientEmail, clientPhone, serviceType, priority]
+
+    UpdateCaseBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [active, pending_documents, in_review, approved, completed, rejected]
+        priority:
+          type: string
+          enum: [low, normal, high, urgent]
+        notes:
+          type: string
+        progressPercent:
+          type: integer
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        caseId:
+          type: integer
+        senderName:
+          type: string
+        senderRole:
+          type: string
+          enum: [admin, client]
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, caseId, senderName, senderRole, content, createdAt]
+
+    CreateMessageBody:
+      type: object
+      properties:
+        content:
+          type: string
+      required: [content]
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        titleFa:
+          type: string
+        description:
+          type: string
+        descriptionFa:
+          type: string
+        icon:
+          type: string
+        category:
+          type: string
+          enum: [education, residency, legal, work]
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, titleFa, description, descriptionFa, icon, category, isActive, sortOrder, createdAt]
+
+    CreateServiceBody:
+      type: object
+      properties:
+        title:
+          type: string
+        titleFa:
+          type: string
+        description:
+          type: string
+        descriptionFa:
+          type: string
+        icon:
+          type: string
+        category:
+          type: string
+          enum: [education, residency, legal, work]
+        sortOrder:
+          type: integer
+      required: [title, titleFa, description, descriptionFa, icon, category]
+
+    UpdateServiceBody:
+      type: object
+      properties:
+        title:
+          type: string
+        titleFa:
+          type: string
+        description:
+          type: string
+        descriptionFa:
+          type: string
+        icon:
+          type: string
+        category:
+          type: string
+          enum: [education, residency, legal, work]
+        isActive:
+          type: boolean
+        sortOrder:
+          type: integer
+
+    AdminStats:
+      type: object
+      properties:
+        totalConsultations:
+          type: integer
+        pendingConsultations:
+          type: integer
+        totalCases:
+          type: integer
+        activeCases:
+          type: integer
+        completedCases:
+          type: integer
+        consultationsThisMonth:
+          type: integer
+        casesThisMonth:
+          type: integer
+      required: [totalConsultations, pendingConsultations, totalCases, activeCases, completedCases, consultationsThisMonth, casesThisMonth]
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [new_consultation, case_updated, message_sent, case_created]
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, type, description, createdAt]
+
+    ServiceCount:
+      type: object
+      properties:
+        serviceType:
+          type: string
+        count:
+          type: integer
+        label:
+          type: string
+      required: [serviceType, count, label]
