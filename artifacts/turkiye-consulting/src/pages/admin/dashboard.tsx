@@ -3,7 +3,6 @@ import { useGetAdminStats, useGetRecentActivity, useGetCasesByService } from "@w
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Users, FileText, CheckCircle, Activity, MessageSquare, AlertCircle } from "lucide-react";
-type ActivityItemType = "new_consultation" | "case_updated" | "message_sent" | "case_created";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell } from "recharts";
 import { format } from "date-fns";
 
@@ -151,13 +150,13 @@ function StatCard({ title, value, loading, icon, trend, highlight = false }: any
 
 function ActivityIcon({ type }: { type: string }) {
   switch (type) {
-    case ActivityItemType.new_consultation:
+    case "new_consultation":
       return <div className="size-8 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center"><Users className="size-4" /></div>;
-    case ActivityItemType.case_updated:
+    case "case_updated":
       return <div className="size-8 rounded-full bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 flex items-center justify-center"><Activity className="size-4" /></div>;
-    case ActivityItemType.message_sent:
+    case "message_sent":
       return <div className="size-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center"><MessageSquare className="size-4" /></div>;
-    case ActivityItemType.case_created:
+    case "case_created":
       return <div className="size-8 rounded-full bg-primary/10 text-primary flex items-center justify-center"><FileText className="size-4" /></div>;
     default:
       return <div className="size-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center"><AlertCircle className="size-4" /></div>;

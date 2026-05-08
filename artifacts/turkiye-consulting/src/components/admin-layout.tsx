@@ -4,23 +4,25 @@ import { Button } from "@/components/ui/button";
 import { Loader2, LayoutDashboard, Inbox, FileText, Settings, LogOut, Moon, Sun, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "next-themes";
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const { user, isLoading, logout } = useAuth();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { theme, setTheme } = useTheme();
 
-  if (isLoading) {
+  useEffect(() => {
+    if (!isLoading && !user) {
+      setLocation("/admin/login");
+    }
+  }, [isLoading, user, setLocation]);
+
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
-  }
-
-  if (!user) {
-    return null; // Will redirect in App.tsx
   }
 
   const NavItems = () => (
