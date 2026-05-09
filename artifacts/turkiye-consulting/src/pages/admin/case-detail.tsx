@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, Send, Save, Loader2, User, UserCheck } from "lucide-react";
+import { ChevronLeft, Send, Save, Loader2, MessageSquare } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -83,11 +83,9 @@ export default function AdminCaseDetail() {
     if (!newMessage.trim()) return;
 
     messageMutation.mutate(
-      { data: { content: newMessage } },
+      { data: { content: newMessage, caseId: id } },
       {
-        request: { headers: { "X-Case-Id": id.toString() } }, // Passing case ID to mutation conceptually
         onSuccess: () => {
-          // In a real app we'd pass caseId in the body or route, here we're adapting to the schema
           queryClient.invalidateQueries({ queryKey: getListCaseMessagesQueryKey(id) });
           setNewMessage("");
         }
@@ -246,7 +244,7 @@ export default function AdminCaseDetail() {
             <Card className="flex flex-col flex-1 shadow-md border-primary/10">
               <CardHeader className="border-b bg-muted/30 pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <MessageSquareIcon className="size-5" />
+                  <MessageSquare className="size-5" />
                   Communication
                 </CardTitle>
               </CardHeader>
@@ -309,11 +307,3 @@ export default function AdminCaseDetail() {
   );
 }
 
-// Temporary icon since we couldn't import it at the top easily
-function MessageSquareIcon(props: any) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z" />
-    </svg>
-  );
-}

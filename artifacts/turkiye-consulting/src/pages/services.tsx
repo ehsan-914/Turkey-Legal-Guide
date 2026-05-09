@@ -16,7 +16,7 @@ const CATEGORY_MAP: Record<string, { label: string; icon: any }> = {
 
 export default function ServicesPage() {
   const [location] = useLocation();
-  const searchParams = new URLSearchParams(window.location.search);
+  const searchParams = new URLSearchParams(location.includes("?") ? location.slice(location.indexOf("?")) : "");
   const initialCategory = searchParams.get("category") || "all";
   const [activeTab, setActiveTab] = useState<string>(initialCategory);
 

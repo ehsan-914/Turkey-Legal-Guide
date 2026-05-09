@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useState, useEffect } from "react";
+import { createContext, useContext, ReactNode } from "react";
 import { AuthUser } from "@workspace/api-client-react";
 import { useGetMe, getGetMeQueryKey, useLogin, useLogout } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";

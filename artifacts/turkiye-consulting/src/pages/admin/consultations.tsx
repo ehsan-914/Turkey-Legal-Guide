@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { AdminLayout } from "@/components/admin-layout";
 import { useListConsultations, useUpdateConsultation, getListConsultationsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";

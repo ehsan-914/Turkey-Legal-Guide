@@ -1,8 +1,12 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 
 export function PublicLayout({ children }: { children: ReactNode }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground" dir="rtl">
       {/* Header */}
@@ -15,21 +19,53 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               </div>
               <span className="font-serif font-bold text-lg hidden sm:inline-block">Türkiye Danışmanlık</span>
             </Link>
-            
+
             <nav className="hidden md:flex gap-6">
               <Link href="/" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">خانه</Link>
               <Link href="/services" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">خدمات</Link>
               <Link href="/contact" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">تماس با ما</Link>
             </nav>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <Link href="/contact" className="hidden sm:inline-flex">
               <Button>درخواست مشاوره</Button>
             </Link>
-            <Link href="/admin/login" className="text-xs text-muted-foreground hover:text-foreground">
+            <Link href="/admin/login" className="hidden sm:inline-block text-xs text-muted-foreground hover:text-foreground">
               ورود مدیر
             </Link>
+
+            {/* Mobile hamburger */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="md:hidden">
+                  <Menu className="size-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-64 p-0" dir="rtl">
+                <div className="p-6 border-b">
+                  <Link href="/" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
+                    <div className="size-8 rounded-sm bg-primary flex items-center justify-center">
+                      <span className="text-primary-foreground font-serif font-bold text-xl leading-none">T</span>
+                    </div>
+                    <span className="font-serif font-bold text-lg">Türkiye Danışmanlık</span>
+                  </Link>
+                </div>
+                <nav className="flex flex-col gap-1 p-4">
+                  <Link href="/" className="px-3 py-2.5 rounded-md text-sm font-medium hover:bg-muted transition-colors" onClick={() => setMobileMenuOpen(false)}>خانه</Link>
+                  <Link href="/services" className="px-3 py-2.5 rounded-md text-sm font-medium hover:bg-muted transition-colors" onClick={() => setMobileMenuOpen(false)}>خدمات</Link>
+                  <Link href="/contact" className="px-3 py-2.5 rounded-md text-sm font-medium hover:bg-muted transition-colors" onClick={() => setMobileMenuOpen(false)}>تماس با ما</Link>
+                </nav>
+                <div className="px-4 pt-2 border-t mt-2">
+                  <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full">درخواست مشاوره</Button>
+                  </Link>
+                  <Link href="/admin/login" className="block text-center text-xs text-muted-foreground hover:text-foreground mt-4" onClick={() => setMobileMenuOpen(false)}>
+                    ورود مدیر
+                  </Link>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
@@ -78,7 +114,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
               <h3 className="font-bold mb-4 font-serif">تماس</h3>
               <address className="not-italic space-y-2 text-sm text-muted-foreground">
                 <p>استانبول، شیشلی</p>
-                <p>تلفن: +90 555 123 4567</p>
+                <p dir="ltr">+90 212 555 1234 (دفتر)</p>
+                <p dir="ltr">+90 555 123 4567 (واتس‌اپ)</p>
                 <p>ایمیل: info@turkiyedanismanlik.com</p>
               </address>
             </div>

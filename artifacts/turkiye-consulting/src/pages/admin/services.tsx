@@ -15,11 +15,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Plus, Edit2, Trash2, Loader2, GripVertical } from "lucide-react";
+import { Plus, Edit2, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const serviceSchema = z.object({
@@ -113,17 +114,15 @@ function ServiceCard({ service, onEdit }: { service: any, onEdit: () => void }) 
   };
 
   const handleDelete = () => {
-    if (confirm("Are you sure you want to delete this service?")) {
-      deleteMutation.mutate(
-        { id: service.id },
-        {
-          onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: getListServicesQueryKey() });
-            toast({ title: "Service deleted" });
-          }
+    deleteMutation.mutate(
+      { id: service.id },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListServicesQueryKey() });
+          toast({ title: "Service deleted" });
         }
-      );
-    }
+      }
+    );
   };
 
   return (
@@ -144,9 +143,27 @@ function ServiceCard({ service, onEdit }: { service: any, onEdit: () => void }) 
               <Button variant="ghost" size="icon" className="size-7 h-7" onClick={onEdit}>
                 <Edit2 className="size-3.5 text-muted-foreground" />
               </Button>
-              <Button variant="ghost" size="icon" className="size-7 h-7 hover:bg-destructive/10 hover:text-destructive" onClick={handleDelete} disabled={deleteMutation.isPending}>
-                <Trash2 className="size-3.5" />
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="size-7 h-7 hover:bg-destructive/10 hover:text-destructive" disabled={deleteMutation.isPending}>
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Service</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{service.title}"? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </div>

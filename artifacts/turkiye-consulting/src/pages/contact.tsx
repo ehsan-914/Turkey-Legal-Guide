@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Phone, Mail, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 const formSchema = z.object({
   fullName: z.string().min(2, "نام کامل الزامی است"),
@@ -31,7 +32,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
-  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+  const [location] = useLocation();
+  const searchParams = new URLSearchParams(location.includes("?") ? location.slice(location.indexOf("?")) : "");
   const preselectedService = searchParams.get("service") || "";
 
   const form = useForm<FormValues>({

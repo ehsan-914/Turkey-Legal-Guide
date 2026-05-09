@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PublicLayout } from "@/components/layout";
-import { MapPin, Phone, Mail, ChevronLeft, Shield, GraduationCap, Building, Briefcase } from "lucide-react";
+import { ChevronLeft, Shield, GraduationCap, Building, Briefcase } from "lucide-react";
 
 export default function Home() {
   return (
