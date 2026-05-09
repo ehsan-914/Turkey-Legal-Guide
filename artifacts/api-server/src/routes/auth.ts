@@ -6,12 +6,31 @@ import crypto from "crypto";
 
 const router: IRouter = Router();
 
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
+const SCRYPT_KEYLEN = 64;
+
+function hashPassword(password: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const salt = crypto.randomBytes(16).toString("hex");
+    crypto.scrypt(password, salt, SCRYPT_KEYLEN, (err, derivedKey) => {
+      if (err) reject(err);
+      else resolve(`${salt}:${derivedKey.toString("hex")}`);
+    });
+  });
 }
 
-function verifyPassword(password: string, hash: string): boolean {
-  return hashPassword(password) === hash;
+function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    if (storedHash.includes(":")) {
+      const [salt, hash] = storedHash.split(":");
+      crypto.scrypt(password, salt, SCRYPT_KEYLEN, (err, derivedKey) => {
+        if (err) reject(err);
+        else resolve(crypto.timingSafeEqual(Buffer.from(hash, "hex"), derivedKey));
+      });
+    } else {
+      const sha256Hash = crypto.createHash("sha256").update(password).digest("hex");
+      resolve(sha256Hash === storedHash);
+    }
+  });
 }
 
 router.post("/auth/login", async (req, res): Promise<void> => {
@@ -28,7 +47,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     .from(usersTable)
     .where(eq(usersTable.username, username));
 
-  if (!user || !verifyPassword(password, user.passwordHash)) {
+  if (!user || !(await verifyPassword(password, user.passwordHash))) {
     res.status(401).json({ error: "Invalid username or password" });
     return;
   }

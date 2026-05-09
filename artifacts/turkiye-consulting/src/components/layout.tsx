@@ -1,8 +1,12 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
 
 export function PublicLayout({ children }: { children: ReactNode }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground" dir="rtl">
       {/* Header */}
@@ -27,9 +31,29 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             <Link href="/contact" className="hidden sm:inline-flex">
               <Button>درخواست مشاوره</Button>
             </Link>
-            <Link href="/admin/login" className="text-xs text-muted-foreground hover:text-foreground">
+            <Link href="/admin/login" className="text-xs text-muted-foreground hover:text-foreground hidden md:inline-block">
               ورود مدیر
             </Link>
+
+            {/* Mobile Menu */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="size-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-72" dir="rtl">
+                <nav className="flex flex-col gap-4 mt-8">
+                  <Link href="/" className="text-base font-medium py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>خانه</Link>
+                  <Link href="/services" className="text-base font-medium py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>خدمات</Link>
+                  <Link href="/contact" className="text-base font-medium py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>تماس با ما</Link>
+                  <Link href="/admin/login" className="text-sm text-muted-foreground py-2" onClick={() => setMobileMenuOpen(false)}>ورود مدیر</Link>
+                  <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
+                    <Button className="w-full mt-4">درخواست مشاوره</Button>
+                  </Link>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>

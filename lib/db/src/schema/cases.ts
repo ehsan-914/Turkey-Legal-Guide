@@ -1,6 +1,7 @@
 import { pgTable, serial, text, timestamp, pgEnum, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { consultationsTable } from "./consultations";
 
 export const caseStatusEnum = pgEnum("case_status", [
   "active",
@@ -28,7 +29,7 @@ export const casesTable = pgTable("cases", {
   priority: casePriorityEnum("priority").notNull().default("normal"),
   notes: text("notes"),
   progressPercent: integer("progress_percent").notNull().default(0),
-  consultationId: integer("consultation_id"),
+  consultationId: integer("consultation_id").references(() => consultationsTable.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

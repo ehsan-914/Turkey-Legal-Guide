@@ -1,14 +1,14 @@
-import { createContext, useContext, ReactNode, useState, useEffect } from "react";
-import { AuthUser } from "@workspace/api-client-react";
+import { createContext, useContext, ReactNode } from "react";
+import { AuthUser, LoginBody } from "@workspace/api-client-react";
 import { useGetMe, getGetMeQueryKey, useLogin, useLogout } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, UseMutateFunction } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
-  login: typeof useLogin extends () => infer R ? R["mutate"] : never;
-  logout: typeof useLogout extends () => infer R ? R["mutate"] : never;
+  login: UseMutateFunction<AuthUser, unknown, { data: LoginBody }, unknown>;
+  logout: UseMutateFunction<unknown, unknown, void, unknown>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -19,6 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const { data: user, isLoading, error } = useGetMe({
     query: {
+      queryKey: getGetMeQueryKey(),
       retry: false,
       staleTime: Infinity,
     }

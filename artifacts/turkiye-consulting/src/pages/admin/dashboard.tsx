@@ -129,7 +129,16 @@ export default function AdminDashboard() {
   );
 }
 
-function StatCard({ title, value, loading, icon, trend, highlight = false }: any) {
+interface StatCardProps {
+  title: string;
+  value?: number;
+  loading: boolean;
+  icon: React.ReactNode;
+  trend: string;
+  highlight?: boolean;
+}
+
+function StatCard({ title, value, loading, icon, trend, highlight = false }: StatCardProps) {
   return (
     <Card className={highlight ? "border-secondary shadow-sm" : ""}>
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">

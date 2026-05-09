@@ -16,10 +16,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, Send, Save, Loader2, User, UserCheck } from "lucide-react";
+import { ChevronLeft, Send, Save, Loader2, User, UserCheck, MessageSquare } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import type { UpdateCaseBodyStatus, UpdateCaseBodyPriority } from "@workspace/api-client-react";
 
 export default function AdminCaseDetail() {
   const params = useParams();
@@ -27,15 +28,15 @@ export default function AdminCaseDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: caseData, isLoading } = useGetCase(id, { query: { enabled: !!id } });
-  const { data: messages, isLoading: messagesLoading } = useListCaseMessages(id, { query: { enabled: !!id } });
+  const { data: caseData, isLoading } = useGetCase(id, { query: { queryKey: getGetCaseQueryKey(id), enabled: !!id } });
+  const { data: messages, isLoading: messagesLoading } = useListCaseMessages(id, { query: { queryKey: getListCaseMessagesQueryKey(id), enabled: !!id } });
   
   const updateMutation = useUpdateCase();
   const messageMutation = useCreateCaseMessage();
 
   // Local state for edits
-  const [status, setStatus] = useState<string>("");
-  const [priority, setPriority] = useState<string>("");
+  const [status, setStatus] = useState<UpdateCaseBodyStatus>("active");
+  const [priority, setPriority] = useState<UpdateCaseBodyPriority>("normal");
   const [progress, setProgress] = useState<number>(0);
   const [notes, setNotes] = useState<string>("");
   const [newMessage, setNewMessage] = useState("");
@@ -45,8 +46,8 @@ export default function AdminCaseDetail() {
   const initializedId = useRef<number | null>(null);
   useEffect(() => {
     if (caseData && initializedId.current !== caseData.id) {
-      setStatus(caseData.status);
-      setPriority(caseData.priority);
+      setStatus(caseData.status as UpdateCaseBodyStatus);
+      setPriority(caseData.priority as UpdateCaseBodyPriority);
       setProgress(caseData.progressPercent);
       setNotes(caseData.notes || "");
       initializedId.current = caseData.id;
@@ -63,8 +64,8 @@ export default function AdminCaseDetail() {
       { 
         id, 
         data: { 
-          status: status as any, 
-          priority: priority as any, 
+          status, 
+          priority, 
           progressPercent: progress, 
           notes 
         } 
@@ -83,11 +84,9 @@ export default function AdminCaseDetail() {
     if (!newMessage.trim()) return;
 
     messageMutation.mutate(
-      { data: { content: newMessage } },
+      { id, data: { content: newMessage } },
       {
-        request: { headers: { "X-Case-Id": id.toString() } }, // Passing case ID to mutation conceptually
         onSuccess: () => {
-          // In a real app we'd pass caseId in the body or route, here we're adapting to the schema
           queryClient.invalidateQueries({ queryKey: getListCaseMessagesQueryKey(id) });
           setNewMessage("");
         }
@@ -143,7 +142,7 @@ export default function AdminCaseDetail() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Status</label>
-                    <Select value={status} onValueChange={setStatus}>
+                    <Select value={status} onValueChange={(v: string) => setStatus(v as UpdateCaseBodyStatus)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -160,7 +159,7 @@ export default function AdminCaseDetail() {
                   
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Priority</label>
-                    <Select value={priority} onValueChange={setPriority}>
+                    <Select value={priority} onValueChange={(v: string) => setPriority(v as UpdateCaseBodyPriority)}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -246,7 +245,7 @@ export default function AdminCaseDetail() {
             <Card className="flex flex-col flex-1 shadow-md border-primary/10">
               <CardHeader className="border-b bg-muted/30 pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <MessageSquareIcon className="size-5" />
+                  <MessageSquare className="size-5" />
                   Communication
                 </CardTitle>
               </CardHeader>
@@ -306,14 +305,5 @@ export default function AdminCaseDetail() {
         </div>
       </div>
     </AdminLayout>
-  );
-}
-
-// Temporary icon since we couldn't import it at the top easily
-function MessageSquareIcon(props: any) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z" />
-    </svg>
   );
 }

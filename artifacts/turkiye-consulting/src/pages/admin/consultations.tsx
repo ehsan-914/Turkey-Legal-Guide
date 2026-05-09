@@ -12,17 +12,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-type ConsultationStatus = "pending" | "reviewed" | "converted" | "rejected";
-type UpdateConsultationBodyStatus = "pending" | "reviewed" | "converted" | "rejected";
+import type { Consultation, UpdateConsultationBodyStatus, ListConsultationsStatus } from "@workspace/api-client-react";
 import { Search, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminConsultations() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<Consultation | null>(null);
   
-  const queryParams = statusFilter !== "all" ? { status: statusFilter as any } : undefined;
+  const queryParams = statusFilter !== "all" ? { status: statusFilter as ListConsultationsStatus } : undefined;
   const { data: consultations, isLoading } = useListConsultations(queryParams);
   
   const filteredData = consultations?.filter(c => 
@@ -126,7 +125,7 @@ export default function AdminConsultations() {
         <ConsultationDialog 
           consultation={selectedItem} 
           open={!!selectedItem} 
-          onOpenChange={(open) => !open && setSelectedItem(null)} 
+          onOpenChange={(open: boolean) => !open && setSelectedItem(null)} 
           statusFilter={statusFilter}
         />
       )}
@@ -144,7 +143,14 @@ function StatusBadge({ status }: { status: string }) {
   }
 }
 
-function ConsultationDialog({ consultation, open, onOpenChange, statusFilter }: any) {
+interface ConsultationDialogProps {
+  consultation: Consultation;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  statusFilter: string;
+}
+
+function ConsultationDialog({ consultation, open, onOpenChange, statusFilter }: ConsultationDialogProps) {
   const [notes, setNotes] = useState(consultation.adminNotes || "");
   const [status, setStatus] = useState<UpdateConsultationBodyStatus>(consultation.status as UpdateConsultationBodyStatus);
   const queryClient = useQueryClient();
@@ -157,7 +163,7 @@ function ConsultationDialog({ consultation, open, onOpenChange, statusFilter }: 
       { id: consultation.id, data: { status, adminNotes: notes } },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListConsultationsQueryKey(statusFilter !== 'all' ? { status: statusFilter as any } : undefined) });
+          queryClient.invalidateQueries({ queryKey: getListConsultationsQueryKey(statusFilter !== 'all' ? { status: statusFilter as ListConsultationsStatus } : undefined) });
           toast({ title: "Consultation updated successfully" });
           onOpenChange(false);
         },
@@ -204,7 +210,7 @@ function ConsultationDialog({ consultation, open, onOpenChange, statusFilter }: 
           <div className="space-y-4 pt-4 border-t">
             <div className="space-y-2">
               <label className="text-sm font-medium">Status</label>
-              <Select value={status} onValueChange={(val: any) => setStatus(val)}>
+              <Select value={status} onValueChange={(val: string) => setStatus(val as UpdateConsultationBodyStatus)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
