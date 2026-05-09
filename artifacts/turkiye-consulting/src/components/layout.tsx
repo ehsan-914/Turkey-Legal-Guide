@@ -3,9 +3,20 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+import { ChatWidget } from "@/components/chat-widget";
+import { useGetSiteContent } from "@workspace/api-client-react";
+
+const FOOTER_DEFAULTS: Record<string, string> = {
+  "contact.office_address": "استانبول، شیشلی",
+  "contact.phone_office": "+90 212 555 1234",
+  "contact.phone_whatsapp": "+90 555 123 4567",
+  "contact.email": "info@turkiyedanismanlik.com",
+};
 
 export function PublicLayout({ children }: { children: ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { data: siteContent } = useGetSiteContent();
+  const fc = (key: string) => siteContent?.[key] || FOOTER_DEFAULTS[key] || "";
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground" dir="rtl">
@@ -75,6 +86,8 @@ export function PublicLayout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
+      <ChatWidget />
+
       {/* Footer */}
       <footer className="border-t bg-card text-card-foreground">
         <div className="container mx-auto py-12 px-4 md:px-6">
@@ -113,10 +126,10 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             <div>
               <h3 className="font-bold mb-4 font-serif">تماس</h3>
               <address className="not-italic space-y-2 text-sm text-muted-foreground">
-                <p>استانبول، شیشلی</p>
-                <p dir="ltr">+90 212 555 1234 (دفتر)</p>
-                <p dir="ltr">+90 555 123 4567 (واتس‌اپ)</p>
-                <p>ایمیل: info@turkiyedanismanlik.com</p>
+                <p>{fc("contact.office_address")}</p>
+                <p dir="ltr">{fc("contact.phone_office")} (دفتر)</p>
+                <p dir="ltr">{fc("contact.phone_whatsapp")} (واتس‌اپ)</p>
+                <p>ایمیل: {fc("contact.email")}</p>
               </address>
             </div>
           </div>

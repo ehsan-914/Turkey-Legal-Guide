@@ -15,6 +15,8 @@ import AdminConsultations from "@/pages/admin/consultations";
 import AdminCases from "@/pages/admin/cases";
 import AdminCaseDetail from "@/pages/admin/case-detail";
 import AdminServices from "@/pages/admin/services";
+import AdminChat from "@/pages/admin/chat";
+import AdminContent from "@/pages/admin/content";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +41,8 @@ function Router() {
       <Route path="/admin/cases" component={AdminCases} />
       <Route path="/admin/cases/:id" component={AdminCaseDetail} />
       <Route path="/admin/services" component={AdminServices} />
+      <Route path="/admin/chat" component={AdminChat} />
+      <Route path="/admin/content" component={AdminContent} />
       
       <Route component={NotFound} />
     </Switch>

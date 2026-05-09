@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Loader2, LayoutDashboard, Inbox, FileText, Settings, LogOut, Moon, Sun, Menu } from "lucide-react";
+import { Loader2, LayoutDashboard, Inbox, FileText, Settings, LogOut, Moon, Sun, Menu, MessageCircle, PenLine } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "next-themes";
 import { ReactNode, useEffect } from "react";
@@ -42,6 +42,14 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       <Link href="/admin/services" className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${location.startsWith('/admin/services') ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
         <Settings className="size-4" />
         <span>Services</span>
+      </Link>
+      <Link href="/admin/chat" className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${location.startsWith('/admin/chat') ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
+        <MessageCircle className="size-4" />
+        <span>Customer Chat</span>
+      </Link>
+      <Link href="/admin/content" className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${location.startsWith('/admin/content') ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
+        <PenLine className="size-4" />
+        <span>Site Content</span>
       </Link>
     </>
   );

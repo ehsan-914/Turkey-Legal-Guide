@@ -38,6 +38,14 @@ import type {
   UpdateCaseBody,
   UpdateConsultationBody,
   UpdateServiceBody,
+  ChatThread,
+  ChatThreadWithMessages,
+  CreateChatThreadBody,
+  CreateChatThreadResponse,
+  AddChatMessageBody,
+  AdminReplyBody,
+  SiteContentMap,
+  UpdateSiteContentBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -1785,3 +1793,103 @@ export function useGetCasesByService<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Chat
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const createChatThread = async (body: CreateChatThreadBody, options?: RequestInit): Promise<CreateChatThreadResponse> =>
+  customFetch<CreateChatThreadResponse>("/api/chat", { ...options, method: "POST", headers: { "Content-Type": "application/json", ...options?.headers }, body: JSON.stringify(body) });
+
+export const useCreateChatThread = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof createChatThread>>, TError, { data: CreateChatThreadBody }, TContext> }): UseMutationResult<Awaited<ReturnType<typeof createChatThread>>, TError, { data: CreateChatThreadBody }, TContext> => {
+  const { mutation: mutationOptions } = options ?? {};
+  return useMutation({ mutationFn: ({ data }) => createChatThread(data), ...mutationOptions });
+};
+
+export const getChatThread = async (id: number, token: string, options?: RequestInit): Promise<ChatThreadWithMessages> =>
+  customFetch<ChatThreadWithMessages>(`/api/chat/${id}?token=${encodeURIComponent(token)}`, { ...options, method: "GET" });
+
+export const getGetChatThreadQueryKey = (id: number, token: string) => [`/api/chat/${id}`, token] as const;
+
+export const useGetChatThread = <TData = Awaited<ReturnType<typeof getChatThread>>, TError = ErrorType<unknown>>(id: number, token: string, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getChatThread>>, TError, TData> }): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetChatThreadQueryKey(id, token);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getChatThread>>> = ({ signal }) => getChatThread(id, token, { signal });
+  const query = useQuery({ queryKey, queryFn, enabled: !!id && !!token, refetchInterval: 5000, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
+};
+
+export const addChatMessage = async (id: number, body: AddChatMessageBody, options?: RequestInit): Promise<void> =>
+  customFetch<void>(`/api/chat/${id}/message`, { ...options, method: "POST", headers: { "Content-Type": "application/json", ...options?.headers }, body: JSON.stringify(body) });
+
+export const useAddChatMessage = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof addChatMessage>>, TError, { id: number; data: AddChatMessageBody }, TContext> }): UseMutationResult<Awaited<ReturnType<typeof addChatMessage>>, TError, { id: number; data: AddChatMessageBody }, TContext> => {
+  const { mutation: mutationOptions } = options ?? {};
+  return useMutation({ mutationFn: ({ id, data }) => addChatMessage(id, data), ...mutationOptions });
+};
+
+export const listAdminChatThreads = async (options?: RequestInit): Promise<ChatThread[]> =>
+  customFetch<ChatThread[]>("/api/admin/chat", { ...options, method: "GET" });
+
+export const getListAdminChatThreadsQueryKey = () => ["/api/admin/chat"] as const;
+
+export const useListAdminChatThreads = <TData = Awaited<ReturnType<typeof listAdminChatThreads>>, TError = ErrorType<unknown>>(options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof listAdminChatThreads>>, TError, TData> }): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getListAdminChatThreadsQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAdminChatThreads>>> = ({ signal }) => listAdminChatThreads({ signal });
+  const query = useQuery({ queryKey, queryFn, refetchInterval: 10000, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
+};
+
+export const getAdminChatThread = async (id: number, options?: RequestInit): Promise<ChatThreadWithMessages> =>
+  customFetch<ChatThreadWithMessages>(`/api/admin/chat/${id}`, { ...options, method: "GET" });
+
+export const getGetAdminChatThreadQueryKey = (id: number) => [`/api/admin/chat/${id}`] as const;
+
+export const useGetAdminChatThread = <TData = Awaited<ReturnType<typeof getAdminChatThread>>, TError = ErrorType<unknown>>(id: number, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getAdminChatThread>>, TError, TData> }): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetAdminChatThreadQueryKey(id);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminChatThread>>> = ({ signal }) => getAdminChatThread(id, { signal });
+  const query = useQuery({ queryKey, queryFn, enabled: !!id, refetchInterval: 5000, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
+};
+
+export const adminReplyChatThread = async (id: number, body: AdminReplyBody, options?: RequestInit): Promise<void> =>
+  customFetch<void>(`/api/admin/chat/${id}/reply`, { ...options, method: "POST", headers: { "Content-Type": "application/json", ...options?.headers }, body: JSON.stringify(body) });
+
+export const useAdminReplyChatThread = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof adminReplyChatThread>>, TError, { id: number; data: AdminReplyBody }, TContext> }): UseMutationResult<Awaited<ReturnType<typeof adminReplyChatThread>>, TError, { id: number; data: AdminReplyBody }, TContext> => {
+  const { mutation: mutationOptions } = options ?? {};
+  return useMutation({ mutationFn: ({ id, data }) => adminReplyChatThread(id, data), ...mutationOptions });
+};
+
+export const updateAdminChatThreadStatus = async (id: number, status: "open" | "closed", options?: RequestInit): Promise<ChatThread> =>
+  customFetch<ChatThread>(`/api/admin/chat/${id}`, { ...options, method: "PATCH", headers: { "Content-Type": "application/json", ...options?.headers }, body: JSON.stringify({ status }) });
+
+export const useUpdateAdminChatThreadStatus = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateAdminChatThreadStatus>>, TError, { id: number; status: "open" | "closed" }, TContext> }): UseMutationResult<Awaited<ReturnType<typeof updateAdminChatThreadStatus>>, TError, { id: number; status: "open" | "closed" }, TContext> => {
+  const { mutation: mutationOptions } = options ?? {};
+  return useMutation({ mutationFn: ({ id, status }) => updateAdminChatThreadStatus(id, status), ...mutationOptions });
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Site Content (CMS)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const getSiteContent = async (options?: RequestInit): Promise<SiteContentMap> =>
+  customFetch<SiteContentMap>("/api/site-content", { ...options, method: "GET" });
+
+export const getGetSiteContentQueryKey = () => ["/api/site-content"] as const;
+
+export const useGetSiteContent = <TData = Awaited<ReturnType<typeof getSiteContent>>, TError = ErrorType<unknown>>(options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getSiteContent>>, TError, TData> }): UseQueryResult<TData, TError> & { queryKey: QueryKey } => {
+  const { query: queryOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetSiteContentQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getSiteContent>>> = ({ signal }) => getSiteContent({ signal });
+  const query = useQuery({ queryKey, queryFn, staleTime: 60_000, ...queryOptions }) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey };
+};
+
+export const updateSiteContent = async (body: UpdateSiteContentBody, options?: RequestInit): Promise<SiteContentMap> =>
+  customFetch<SiteContentMap>("/api/site-content", { ...options, method: "PUT", headers: { "Content-Type": "application/json", ...options?.headers }, body: JSON.stringify(body) });
+
+export const useUpdateSiteContent = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof updateSiteContent>>, TError, { data: UpdateSiteContentBody }, TContext> }): UseMutationResult<Awaited<ReturnType<typeof updateSiteContent>>, TError, { data: UpdateSiteContentBody }, TContext> => {
+  const { mutation: mutationOptions } = options ?? {};
+  return useMutation({ mutationFn: ({ data }) => updateSiteContent(data), ...mutationOptions });
+};

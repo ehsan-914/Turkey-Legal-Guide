@@ -315,3 +315,56 @@ export const ListCasesStatus = {
   completed: "completed",
   rejected: "rejected",
 } as const;
+
+// --- Chat ---
+export interface ChatMessage {
+  id: number;
+  threadId: number;
+  senderRole: "admin" | "client";
+  senderName: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface ChatThread {
+  id: number;
+  token: string;
+  name: string;
+  email: string;
+  phone: string;
+  status: "open" | "closed";
+  createdAt: string;
+}
+
+export interface ChatThreadWithMessages {
+  thread: ChatThread;
+  messages: ChatMessage[];
+}
+
+export interface CreateChatThreadBody {
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+}
+
+export interface CreateChatThreadResponse {
+  threadId: number;
+  token: string;
+}
+
+export interface AddChatMessageBody {
+  content: string;
+  token: string;
+}
+
+export interface AdminReplyBody {
+  content: string;
+}
+
+// --- Site Content ---
+export type SiteContentMap = Record<string, string>;
+
+export interface UpdateSiteContentBody {
+  updates: Record<string, string>;
+}

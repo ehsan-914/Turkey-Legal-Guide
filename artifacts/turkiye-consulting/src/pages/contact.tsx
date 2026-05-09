@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { PublicLayout } from "@/components/layout";
-import { useCreateConsultation } from "@workspace/api-client-react";
+import { useCreateConsultation, useGetSiteContent } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -30,8 +30,21 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const CONTACT_DEFAULTS: Record<string, string> = {
+  "contact.office_address": "ترکیه، استانبول، شیشلی، محله مجیدیه کوی، خیابان بویوک دره، پلاک ۱۲۳، طبقه ۵",
+  "contact.phone_office": "+90 212 555 1234",
+  "contact.phone_whatsapp": "+90 555 123 4567",
+  "contact.email": "info@turkiyedanismanlik.com",
+  "contact.working_hours": "دوشنبه تا جمعه: ۹ صبح تا ۶ عصر",
+};
+
+function cc(content: Record<string,string> | undefined, key: string) {
+  return content?.[key] || CONTACT_DEFAULTS[key] || "";
+}
+
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const { data: content } = useGetSiteContent();
   const [location] = useLocation();
   const searchParams = new URLSearchParams(location.includes("?") ? location.slice(location.indexOf("?")) : "");
   const preselectedService = searchParams.get("service") || "";
@@ -91,7 +104,7 @@ export default function ContactPage() {
                 <div>
                   <h4 className="font-bold text-foreground mb-1">آدرس دفتر مرکزی</h4>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    ترکیه، استانبول، شیشلی، محله مجیدیه کوی، خیابان بویوک دره، پلاک ۱۲۳، طبقه ۵
+                    {cc(content, "contact.office_address")}
                   </p>
                 </div>
               </div>
@@ -103,8 +116,8 @@ export default function ContactPage() {
                 <div>
                   <h4 className="font-bold text-foreground mb-1">تلفن‌های تماس</h4>
                   <p className="text-sm text-muted-foreground flex flex-col gap-1" dir="ltr">
-                    <span>+90 212 555 1234 (دفتر)</span>
-                    <span>+90 555 123 4567 (واتس‌اپ)</span>
+                    <span>{cc(content, "contact.phone_office")} (دفتر)</span>
+                    <span>{cc(content, "contact.phone_whatsapp")} (واتس‌اپ)</span>
                   </p>
                 </div>
               </div>
@@ -116,7 +129,7 @@ export default function ContactPage() {
                 <div>
                   <h4 className="font-bold text-foreground mb-1">ایمیل</h4>
                   <p className="text-sm text-muted-foreground" dir="ltr">
-                    info@turkiyedanismanlik.com
+                    {cc(content, "contact.email")}
                   </p>
                 </div>
               </div>
