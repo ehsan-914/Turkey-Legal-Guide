@@ -1,18 +1,82 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { LoginBody, LoginResponse, GetMeResponse, LogoutResponse } from "@workspace/api-zod";
+import { RegisterBody, LoginBody, LoginResponse, GetMeResponse, LogoutResponse } from "@workspace/api-zod";
 import crypto from "crypto";
 
 const router: IRouter = Router();
 
-function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
+const SCRYPT_KEYLEN = 64;
+
+function hashPassword(password: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const salt = crypto.randomBytes(16).toString("hex");
+    crypto.scrypt(password, salt, SCRYPT_KEYLEN, (err, derivedKey) => {
+      if (err) reject(err);
+      else resolve(`${salt}:${derivedKey.toString("hex")}`);
+    });
+  });
 }
 
-function verifyPassword(password: string, hash: string): boolean {
-  return hashPassword(password) === hash;
+function verifyPassword(password: string, storedHash: string): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    if (storedHash.includes(":")) {
+      const [salt, hash] = storedHash.split(":");
+      crypto.scrypt(password, salt, SCRYPT_KEYLEN, (err, derivedKey) => {
+        if (err) reject(err);
+        else resolve(crypto.timingSafeEqual(Buffer.from(hash, "hex"), derivedKey));
+      });
+    } else {
+      const sha256Hash = crypto.createHash("sha256").update(password).digest("hex");
+      resolve(sha256Hash === storedHash);
+    }
+  });
 }
+
+router.post("/auth/register", async (req, res): Promise<void> => {
+  const parsed = RegisterBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  const { username, password, name, email, phone } = parsed.data;
+
+  const [existing] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.username, username));
+
+  if (existing) {
+    res.status(409).json({ error: "Username already exists" });
+    return;
+  }
+
+  const passwordHash = await hashPassword(password);
+  const [newUser] = await db
+    .insert(usersTable)
+    .values({ username, passwordHash, name, email, phone, role: "client" })
+    .returning();
+
+  req.session.userId = newUser.id;
+  req.session.save((err) => {
+    if (err) {
+      req.log.error({ err }, "Session save error");
+      res.status(500).json({ error: "Session error" });
+      return;
+    }
+    res.status(201).json(
+      LoginResponse.parse({
+        id: newUser.id,
+        username: newUser.username,
+        name: newUser.name,
+        role: newUser.role,
+        email: newUser.email,
+        phone: newUser.phone,
+      })
+    );
+  });
+});
 
 router.post("/auth/login", async (req, res): Promise<void> => {
   const parsed = LoginBody.safeParse(req.body);
@@ -28,7 +92,7 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     .from(usersTable)
     .where(eq(usersTable.username, username));
 
-  if (!user || !verifyPassword(password, user.passwordHash)) {
+  if (!user || !(await verifyPassword(password, user.passwordHash))) {
     res.status(401).json({ error: "Invalid username or password" });
     return;
   }
@@ -46,6 +110,8 @@ router.post("/auth/login", async (req, res): Promise<void> => {
         username: user.username,
         name: user.name,
         role: user.role,
+        email: user.email,
+        phone: user.phone,
       })
     );
   });
@@ -83,6 +149,8 @@ router.get("/auth/me", async (req, res): Promise<void> => {
       username: user.username,
       name: user.name,
       role: user.role,
+      email: user.email,
+      phone: user.phone,
     })
   );
 });

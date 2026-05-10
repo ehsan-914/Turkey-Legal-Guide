@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, casesTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
+import { requireAdmin } from "../middlewares/auth";
 import {
   CreateCaseBody,
   ListCasesQueryParams,
@@ -14,28 +15,27 @@ import {
 
 const router: IRouter = Router();
 
-router.get("/cases", async (req, res): Promise<void> => {
+router.get("/cases", requireAdmin, async (req, res): Promise<void> => {
   const params = ListCasesQueryParams.safeParse(req.query);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
 
+  const conditions = [];
+  if (params.data.status) conditions.push(eq(casesTable.status, params.data.status));
+  if (params.data.serviceType) conditions.push(eq(casesTable.serviceType, params.data.serviceType));
+
   const results = await db
     .select()
     .from(casesTable)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(casesTable.updatedAt));
 
-  const filtered = results.filter((c) => {
-    if (params.data.status && c.status !== params.data.status) return false;
-    if (params.data.serviceType && c.serviceType !== params.data.serviceType) return false;
-    return true;
-  });
-
-  res.json(ListCasesResponse.parse(filtered));
+  res.json(ListCasesResponse.parse(results));
 });
 
-router.post("/cases", async (req, res): Promise<void> => {
+router.post("/cases", requireAdmin, async (req, res): Promise<void> => {
   const parsed = CreateCaseBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -58,7 +58,7 @@ router.post("/cases", async (req, res): Promise<void> => {
   res.status(201).json(GetCaseResponse.parse(newCase));
 });
 
-router.get("/cases/:id", async (req, res): Promise<void> => {
+router.get("/cases/:id", requireAdmin, async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetCaseParams.safeParse({ id: raw });
   if (!params.success) {
@@ -79,7 +79,7 @@ router.get("/cases/:id", async (req, res): Promise<void> => {
   res.json(GetCaseResponse.parse(caseItem));
 });
 
-router.patch("/cases/:id", async (req, res): Promise<void> => {
+router.patch("/cases/:id", requireAdmin, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = UpdateCaseParams.safeParse({ id: rawId });
   if (!params.success) {

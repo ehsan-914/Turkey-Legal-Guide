@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, messagesTable, usersTable } from "@workspace/db";
 import { eq, asc } from "drizzle-orm";
+import { requireAdmin } from "../middlewares/auth";
 import {
   CreateCaseMessageBody,
   CreateCaseMessageParams,
@@ -10,7 +11,7 @@ import {
 
 const router: IRouter = Router();
 
-router.get("/cases/:id/messages", async (req, res): Promise<void> => {
+router.get("/cases/:id/messages", requireAdmin, async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = ListCaseMessagesParams.safeParse({ id: raw });
   if (!params.success) {
@@ -27,7 +28,7 @@ router.get("/cases/:id/messages", async (req, res): Promise<void> => {
   res.json(ListCaseMessagesResponse.parse(messages));
 });
 
-router.post("/cases/:id/messages", async (req, res): Promise<void> => {
+router.post("/cases/:id/messages", requireAdmin, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const pathParams = CreateCaseMessageParams.safeParse({ id: rawId });
   if (!pathParams.success) {

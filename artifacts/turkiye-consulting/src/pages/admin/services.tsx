@@ -21,6 +21,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Plus, Edit2, Trash2, Loader2, GripVertical } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import type { Service } from "@workspace/api-client-react";
 
 const serviceSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -35,7 +36,7 @@ const serviceSchema = z.object({
 export default function AdminServices() {
   const { data: services, isLoading } = useListServices();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingService, setEditingService] = useState<any>(null);
+  const [editingService, setEditingService] = useState<Service | null>(null);
 
   const sortedServices = [...(services || [])].sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -94,7 +95,7 @@ export default function AdminServices() {
   );
 }
 
-function ServiceCard({ service, onEdit }: { service: any, onEdit: () => void }) {
+function ServiceCard({ service, onEdit }: { service: Service, onEdit: () => void }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const updateMutation = useUpdateService();
@@ -155,7 +156,14 @@ function ServiceCard({ service, onEdit }: { service: any, onEdit: () => void }) 
   );
 }
 
-function ServiceDialog({ open, onOpenChange, service, isEditing = false }: any) {
+interface ServiceDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  service?: Service;
+  isEditing?: boolean;
+}
+
+function ServiceDialog({ open, onOpenChange, service, isEditing = false }: ServiceDialogProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   

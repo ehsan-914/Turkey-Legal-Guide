@@ -15,6 +15,17 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Register a new client account
+ */
+export const RegisterBody = zod.object({
+  username: zod.string(),
+  password: zod.string(),
+  name: zod.string(),
+  email: zod.string(),
+  phone: zod.string(),
+});
+
+/**
  * @summary Login
  */
 export const LoginBody = zod.object({
@@ -27,6 +38,8 @@ export const LoginResponse = zod.object({
   username: zod.string(),
   name: zod.string(),
   role: zod.enum(["admin", "client"]),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
 });
 
 /**
@@ -45,6 +58,8 @@ export const GetMeResponse = zod.object({
   username: zod.string(),
   name: zod.string(),
   role: zod.enum(["admin", "client"]),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
 });
 
 /**
@@ -159,6 +174,7 @@ export const ListCasesResponseItem = zod.object({
   notes: zod.string().nullish(),
   progressPercent: zod.number(),
   consultationId: zod.number().nullish(),
+  clientId: zod.number().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -175,6 +191,7 @@ export const CreateCaseBody = zod.object({
   priority: zod.enum(["low", "normal", "high", "urgent"]),
   notes: zod.string().optional(),
   consultationId: zod.number().optional(),
+  clientId: zod.number().optional(),
 });
 
 /**
@@ -202,6 +219,7 @@ export const GetCaseResponse = zod.object({
   notes: zod.string().nullish(),
   progressPercent: zod.number(),
   consultationId: zod.number().nullish(),
+  clientId: zod.number().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -247,6 +265,7 @@ export const UpdateCaseResponse = zod.object({
   notes: zod.string().nullish(),
   progressPercent: zod.number(),
   consultationId: zod.number().nullish(),
+  clientId: zod.number().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -350,6 +369,195 @@ export const DeleteServiceParams = zod.object({
 export const DeleteServiceResponse = zod.object({
   success: zod.boolean(),
   message: zod.string().optional(),
+});
+
+/**
+ * @summary List cases for the logged-in client
+ */
+export const ListClientCasesResponseItem = zod.object({
+  id: zod.number(),
+  clientName: zod.string(),
+  clientEmail: zod.string(),
+  clientPhone: zod.string(),
+  serviceType: zod.string(),
+  status: zod.enum([
+    "active",
+    "pending_documents",
+    "in_review",
+    "approved",
+    "completed",
+    "rejected",
+  ]),
+  priority: zod.enum(["low", "normal", "high", "urgent"]),
+  notes: zod.string().nullish(),
+  progressPercent: zod.number(),
+  consultationId: zod.number().nullish(),
+  clientId: zod.number().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+export const ListClientCasesResponse = zod.array(ListClientCasesResponseItem);
+
+/**
+ * @summary List messages for a client case
+ */
+export const ListClientCaseMessagesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListClientCaseMessagesResponseItem = zod.object({
+  id: zod.number(),
+  caseId: zod.number(),
+  senderName: zod.string(),
+  senderRole: zod.enum(["admin", "client"]),
+  content: zod.string(),
+  createdAt: zod.coerce.date(),
+});
+export const ListClientCaseMessagesResponse = zod.array(
+  ListClientCaseMessagesResponseItem,
+);
+
+/**
+ * @summary Send a message on a client case
+ */
+export const CreateClientCaseMessageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreateClientCaseMessageBody = zod.object({
+  content: zod.string(),
+});
+
+/**
+ * @summary List documents for the logged-in client
+ */
+export const ListClientDocumentsResponseItem = zod.object({
+  id: zod.number(),
+  fileName: zod.string(),
+  originalName: zod.string(),
+  mimeType: zod.string(),
+  fileSize: zod.number(),
+  uploadedById: zod.number(),
+  caseId: zod.number().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListClientDocumentsResponse = zod.array(
+  ListClientDocumentsResponseItem,
+);
+
+/**
+ * @summary Upload a document (client)
+ */
+export const UploadClientDocumentBody = zod.object({
+  file: zod.any(),
+  caseId: zod.number().optional(),
+});
+
+/**
+ * @summary Delete a client document
+ */
+export const DeleteClientDocumentParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteClientDocumentResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary List all client accounts (admin only)
+ */
+export const ListClientsResponseItem = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  name: zod.string(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  casesCount: zod.number(),
+  documentsCount: zod.number(),
+});
+export const ListClientsResponse = zod.array(ListClientsResponseItem);
+
+/**
+ * @summary Get client profile with stats (admin only)
+ */
+export const GetClientProfileParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetClientProfileResponse = zod.object({
+  id: zod.number(),
+  username: zod.string(),
+  name: zod.string(),
+  email: zod.string().nullish(),
+  phone: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  cases: zod.array(
+    zod.object({
+      id: zod.number(),
+      clientName: zod.string(),
+      clientEmail: zod.string(),
+      clientPhone: zod.string(),
+      serviceType: zod.string(),
+      status: zod.enum([
+        "active",
+        "pending_documents",
+        "in_review",
+        "approved",
+        "completed",
+        "rejected",
+      ]),
+      priority: zod.enum(["low", "normal", "high", "urgent"]),
+      notes: zod.string().nullish(),
+      progressPercent: zod.number(),
+      consultationId: zod.number().nullish(),
+      clientId: zod.number().nullish(),
+      createdAt: zod.coerce.date(),
+      updatedAt: zod.coerce.date(),
+    }),
+  ),
+  documents: zod.array(
+    zod.object({
+      id: zod.number(),
+      fileName: zod.string(),
+      originalName: zod.string(),
+      mimeType: zod.string(),
+      fileSize: zod.number(),
+      uploadedById: zod.number(),
+      caseId: zod.number().nullish(),
+      createdAt: zod.coerce.date(),
+    }),
+  ),
+});
+
+/**
+ * @summary List documents for a client (admin only)
+ */
+export const ListClientDocumentsAdminParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListClientDocumentsAdminResponseItem = zod.object({
+  id: zod.number(),
+  fileName: zod.string(),
+  originalName: zod.string(),
+  mimeType: zod.string(),
+  fileSize: zod.number(),
+  uploadedById: zod.number(),
+  caseId: zod.number().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListClientDocumentsAdminResponse = zod.array(
+  ListClientDocumentsAdminResponseItem,
+);
+
+/**
+ * @summary Download a document file
+ */
+export const DownloadDocumentParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 /**

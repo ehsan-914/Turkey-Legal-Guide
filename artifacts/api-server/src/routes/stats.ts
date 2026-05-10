@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, consultationsTable, casesTable } from "@workspace/db";
-import { eq, gte, count } from "drizzle-orm";
+import { eq, gte, count, sql } from "drizzle-orm";
+import { requireAdmin } from "../middlewares/auth";
 import {
   GetAdminStatsResponse,
   GetRecentActivityResponse,
@@ -9,31 +10,28 @@ import {
 
 const router: IRouter = Router();
 
-router.get("/stats/admin", async (_req, res): Promise<void> => {
+router.get("/stats/admin", requireAdmin, async (_req, res): Promise<void> => {
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const [allConsultations, allCases] = await Promise.all([
-    db.select().from(consultationsTable),
-    db.select().from(casesTable),
+  const [
+    [{ totalConsultations }],
+    [{ pendingConsultations }],
+    [{ totalCases }],
+    [{ activeCases }],
+    [{ completedCases }],
+    [{ consultationsThisMonth }],
+    [{ casesThisMonth }],
+  ] = await Promise.all([
+    db.select({ totalConsultations: count() }).from(consultationsTable),
+    db.select({ pendingConsultations: count() }).from(consultationsTable).where(eq(consultationsTable.status, "pending")),
+    db.select({ totalCases: count() }).from(casesTable),
+    db.select({ activeCases: count() }).from(casesTable).where(sql`${casesTable.status} IN ('active', 'pending_documents', 'in_review')`),
+    db.select({ completedCases: count() }).from(casesTable).where(eq(casesTable.status, "completed")),
+    db.select({ consultationsThisMonth: count() }).from(consultationsTable).where(gte(consultationsTable.createdAt, startOfMonth)),
+    db.select({ casesThisMonth: count() }).from(casesTable).where(gte(casesTable.createdAt, startOfMonth)),
   ]);
-
-  const totalConsultations = allConsultations.length;
-  const pendingConsultations = allConsultations.filter(
-    (c) => c.status === "pending"
-  ).length;
-  const totalCases = allCases.length;
-  const activeCases = allCases.filter((c) =>
-    ["active", "pending_documents", "in_review"].includes(c.status)
-  ).length;
-  const completedCases = allCases.filter((c) => c.status === "completed").length;
-  const consultationsThisMonth = allConsultations.filter(
-    (c) => c.createdAt >= startOfMonth
-  ).length;
-  const casesThisMonth = allCases.filter(
-    (c) => c.createdAt >= startOfMonth
-  ).length;
 
   res.json(
     GetAdminStatsResponse.parse({
@@ -48,7 +46,7 @@ router.get("/stats/admin", async (_req, res): Promise<void> => {
   );
 });
 
-router.get("/stats/recent-activity", async (_req, res): Promise<void> => {
+router.get("/stats/recent-activity", requireAdmin, async (_req, res): Promise<void> => {
   const [recentConsultations, recentCases] = await Promise.all([
     db
       .select()
@@ -76,9 +74,7 @@ router.get("/stats/recent-activity", async (_req, res): Promise<void> => {
   res.json(GetRecentActivityResponse.parse(activities));
 });
 
-router.get("/stats/cases-by-service", async (_req, res): Promise<void> => {
-  const cases = await db.select().from(casesTable);
-
+router.get("/stats/cases-by-service", requireAdmin, async (_req, res): Promise<void> => {
   const serviceLabels: Record<string, string> = {
     education: "مشاوره تحصیلی",
     residency: "اقامت",
@@ -89,15 +85,18 @@ router.get("/stats/cases-by-service", async (_req, res): Promise<void> => {
     "citizenship": "تابعیت",
   };
 
-  const grouped: Record<string, number> = {};
-  for (const c of cases) {
-    grouped[c.serviceType] = (grouped[c.serviceType] ?? 0) + 1;
-  }
+  const grouped = await db
+    .select({
+      serviceType: casesTable.serviceType,
+      count: count(),
+    })
+    .from(casesTable)
+    .groupBy(casesTable.serviceType);
 
-  const result = Object.entries(grouped).map(([serviceType, count]) => ({
-    serviceType,
-    count,
-    label: serviceLabels[serviceType] ?? serviceType,
+  const result = grouped.map((row) => ({
+    serviceType: row.serviceType,
+    count: row.count,
+    label: serviceLabels[row.serviceType] ?? row.serviceType,
   }));
 
   res.json(GetCasesByServiceResponse.parse(result));

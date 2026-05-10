@@ -6,6 +6,8 @@ import casesRouter from "./cases";
 import messagesRouter from "./messages";
 import servicesRouter from "./services";
 import statsRouter from "./stats";
+import clientRouter from "./client";
+import adminClientsRouter from "./admin-clients";
 
 const router: IRouter = Router();
 
@@ -16,5 +18,7 @@ router.use(casesRouter);
 router.use(messagesRouter);
 router.use(servicesRouter);
 router.use(statsRouter);
+router.use(clientRouter);
+router.use(adminClientsRouter);
 
 export default router;

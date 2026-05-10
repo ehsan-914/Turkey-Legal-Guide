@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, servicesTable } from "@workspace/db";
 import { eq, asc } from "drizzle-orm";
+import { requireAdmin } from "../middlewares/auth";
 import {
   CreateServiceBody,
   UpdateServiceParams,
@@ -22,7 +23,7 @@ router.get("/services", async (_req, res): Promise<void> => {
   res.json(ListServicesResponse.parse(services));
 });
 
-router.post("/services", async (req, res): Promise<void> => {
+router.post("/services", requireAdmin, async (req, res): Promise<void> => {
   const parsed = CreateServiceBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -45,7 +46,7 @@ router.post("/services", async (req, res): Promise<void> => {
   res.status(201).json(service);
 });
 
-router.patch("/services/:id", async (req, res): Promise<void> => {
+router.patch("/services/:id", requireAdmin, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = UpdateServiceParams.safeParse({ id: rawId });
   if (!params.success) {
@@ -83,7 +84,7 @@ router.patch("/services/:id", async (req, res): Promise<void> => {
   res.json(UpdateServiceResponse.parse(service));
 });
 
-router.delete("/services/:id", async (req, res): Promise<void> => {
+router.delete("/services/:id", requireAdmin, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = DeleteServiceParams.safeParse({ id: rawId });
   if (!params.success) {

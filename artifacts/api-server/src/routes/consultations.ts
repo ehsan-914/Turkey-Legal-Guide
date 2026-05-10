@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, consultationsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
+import { requireAdmin } from "../middlewares/auth";
 import {
   CreateConsultationBody,
   ListConsultationsQueryParams,
@@ -14,28 +15,24 @@ import {
 
 const router: IRouter = Router();
 
-router.get("/consultations", async (req, res): Promise<void> => {
+router.get("/consultations", requireAdmin, async (req, res): Promise<void> => {
   const params = ListConsultationsQueryParams.safeParse(req.query);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
   }
 
-  let query = db
+  const conditions = [];
+  if (params.data.status) conditions.push(eq(consultationsTable.status, params.data.status));
+  if (params.data.serviceType) conditions.push(eq(consultationsTable.serviceType, params.data.serviceType));
+
+  const results = await db
     .select()
     .from(consultationsTable)
-    .orderBy(desc(consultationsTable.createdAt))
-    .$dynamic();
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(consultationsTable.createdAt));
 
-  const results = await query;
-
-  const filtered = results.filter((c) => {
-    if (params.data.status && c.status !== params.data.status) return false;
-    if (params.data.serviceType && c.serviceType !== params.data.serviceType) return false;
-    return true;
-  });
-
-  res.json(ListConsultationsResponse.parse(filtered));
+  res.json(ListConsultationsResponse.parse(results));
 });
 
 router.post("/consultations", async (req, res): Promise<void> => {
@@ -59,7 +56,7 @@ router.post("/consultations", async (req, res): Promise<void> => {
   res.status(201).json(GetConsultationResponse.parse(consultation));
 });
 
-router.get("/consultations/:id", async (req, res): Promise<void> => {
+router.get("/consultations/:id", requireAdmin, async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = GetConsultationParams.safeParse({ id: raw });
   if (!params.success) {
@@ -80,7 +77,7 @@ router.get("/consultations/:id", async (req, res): Promise<void> => {
   res.json(GetConsultationResponse.parse(consultation));
 });
 
-router.patch("/consultations/:id", async (req, res): Promise<void> => {
+router.patch("/consultations/:id", requireAdmin, async (req, res): Promise<void> => {
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = UpdateConsultationParams.safeParse({ id: rawId });
   if (!params.success) {

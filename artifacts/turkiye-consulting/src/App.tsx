@@ -15,6 +15,13 @@ import AdminConsultations from "@/pages/admin/consultations";
 import AdminCases from "@/pages/admin/cases";
 import AdminCaseDetail from "@/pages/admin/case-detail";
 import AdminServices from "@/pages/admin/services";
+import AdminClients from "@/pages/admin/clients";
+import AdminClientDetail from "@/pages/admin/client-detail";
+import ClientRegister from "@/pages/client/register";
+import ClientLogin from "@/pages/client/login";
+import ClientDashboard from "@/pages/client/dashboard";
+import ClientDocuments from "@/pages/client/documents";
+import ClientCaseDetail from "@/pages/client/case-detail";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -32,6 +39,13 @@ function Router() {
       <Route path="/services" component={ServicesPage} />
       <Route path="/contact" component={ContactPage} />
 
+      {/* Client Routes */}
+      <Route path="/client/register" component={ClientRegister} />
+      <Route path="/client/login" component={ClientLogin} />
+      <Route path="/client/dashboard" component={ClientDashboard} />
+      <Route path="/client/documents" component={ClientDocuments} />
+      <Route path="/client/cases/:id" component={ClientCaseDetail} />
+
       {/* Admin Routes */}
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin" component={AdminDashboard} />
@@ -39,6 +53,8 @@ function Router() {
       <Route path="/admin/cases" component={AdminCases} />
       <Route path="/admin/cases/:id" component={AdminCaseDetail} />
       <Route path="/admin/services" component={AdminServices} />
+      <Route path="/admin/clients" component={AdminClients} />
+      <Route path="/admin/clients/:id" component={AdminClientDetail} />
       
       <Route component={NotFound} />
     </Switch>

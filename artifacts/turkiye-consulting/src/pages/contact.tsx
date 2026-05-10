@@ -54,6 +54,9 @@ export default function ContactPage() {
         onSuccess: () => {
           setSubmitted(true);
         },
+        onError: () => {
+          form.setError("root", { message: "متأسفانه خطایی رخ داد. لطفاً دوباره تلاش کنید." });
+        },
       }
     );
   };
@@ -227,6 +230,12 @@ export default function ContactPage() {
                           </FormItem>
                         )}
                       />
+
+                      {form.formState.errors.root && (
+                        <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
+                          {form.formState.errors.root.message}
+                        </div>
+                      )}
 
                       <Button 
                         type="submit" 
