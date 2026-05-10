@@ -38,6 +38,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new client account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Username already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /auth/login:
     post:
       operationId: login
@@ -381,6 +412,198 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /client/cases:
+    get:
+      operationId: listClientCases
+      tags: [cases]
+      summary: List cases for the logged-in client
+      responses:
+        "200":
+          description: Client cases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Case"
+
+  /client/cases/{id}/messages:
+    get:
+      operationId: listClientCaseMessages
+      tags: [messages]
+      summary: List messages for a client case
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      operationId: createClientCaseMessage
+      tags: [messages]
+      summary: Send a message on a client case
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMessageBody"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /client/documents:
+    get:
+      operationId: listClientDocuments
+      tags: [documents]
+      summary: List documents for the logged-in client
+      responses:
+        "200":
+          description: Client documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Document"
+    post:
+      operationId: uploadClientDocument
+      tags: [documents]
+      summary: Upload a document (client)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                caseId:
+                  type: integer
+              required: [file]
+      responses:
+        "201":
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+
+  /client/documents/{id}:
+    delete:
+      operationId: deleteClientDocument
+      tags: [documents]
+      summary: Delete a client document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/clients:
+    get:
+      operationId: listClients
+      tags: [auth]
+      summary: List all client accounts (admin only)
+      responses:
+        "200":
+          description: List of clients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClientProfile"
+
+  /admin/clients/{id}:
+    get:
+      operationId: getClientProfile
+      tags: [auth]
+      summary: Get client profile with stats (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Client profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientDetail"
+
+  /admin/clients/{id}/documents:
+    get:
+      operationId: listClientDocumentsAdmin
+      tags: [documents]
+      summary: List documents for a client (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Client documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Document"
+
+  /documents/{id}/download:
+    get:
+      operationId: downloadDocument
+      tags: [documents]
+      summary: Download a document file
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: File download
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
   /stats/admin:
     get:
       operationId: getAdminStats
@@ -449,6 +672,21 @@ components:
           type: string
       required: [success]
 
+    RegisterBody:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+      required: [username, password, name, email, phone]
+
     LoginBody:
       type: object
       properties:
@@ -470,6 +708,12 @@ components:
         role:
           type: string
           enum: [admin, client]
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
       required: [id, username, name, role]
 
     Consultation:
@@ -549,6 +793,9 @@ components:
         consultationId:
           type: integer
           nullable: true
+        clientId:
+          type: integer
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -574,6 +821,8 @@ components:
         notes:
           type: string
         consultationId:
+          type: integer
+        clientId:
           type: integer
       required: [clientName, clientEmail, clientPhone, serviceType, priority]
 
@@ -718,6 +967,81 @@ components:
           type: string
           format: date-time
       required: [id, type, description, createdAt]
+
+    Document:
+      type: object
+      properties:
+        id:
+          type: integer
+        fileName:
+          type: string
+        originalName:
+          type: string
+        mimeType:
+          type: string
+        fileSize:
+          type: integer
+        uploadedById:
+          type: integer
+        caseId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, fileName, originalName, mimeType, fileSize, uploadedById, createdAt]
+
+    ClientProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        casesCount:
+          type: integer
+        documentsCount:
+          type: integer
+      required: [id, username, name, createdAt, casesCount, documentsCount]
+
+    ClientDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        cases:
+          type: array
+          items:
+            $ref: "#/components/schemas/Case"
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Document"
+      required: [id, username, name, createdAt, cases, documents]
 
     ServiceCount:
       type: object

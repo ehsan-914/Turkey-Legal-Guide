@@ -18,6 +18,14 @@ export interface SuccessResponse {
   message?: string;
 }
 
+export interface RegisterBody {
+  username: string;
+  password: string;
+  name: string;
+  email: string;
+  phone: string;
+}
+
 export interface LoginBody {
   username: string;
   password: string;
@@ -35,6 +43,8 @@ export interface AuthUser {
   username: string;
   name: string;
   role: AuthUserRole;
+  email?: string | null;
+  phone?: string | null;
 }
 
 export type ConsultationStatus =
@@ -113,6 +123,7 @@ export interface Case {
   notes?: string | null;
   progressPercent: number;
   consultationId?: number | null;
+  clientId?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -135,6 +146,7 @@ export interface CreateCaseBody {
   priority: CreateCaseBodyPriority;
   notes?: string;
   consultationId?: number;
+  clientId?: number;
 }
 
 export type UpdateCaseBodyStatus =
@@ -278,6 +290,39 @@ export interface ActivityItem {
   createdAt: string;
 }
 
+export interface Document {
+  id: number;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  fileSize: number;
+  uploadedById: number;
+  caseId?: number | null;
+  createdAt: string;
+}
+
+export interface ClientProfile {
+  id: number;
+  username: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  createdAt: string;
+  casesCount: number;
+  documentsCount: number;
+}
+
+export interface ClientDetail {
+  id: number;
+  username: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  createdAt: string;
+  cases: Case[];
+  documents: Document[];
+}
+
 export interface ServiceCount {
   serviceType: string;
   count: number;
@@ -315,3 +360,8 @@ export const ListCasesStatus = {
   completed: "completed",
   rejected: "rejected",
 } as const;
+
+export type UploadClientDocumentBody = {
+  file: Blob;
+  caseId?: number;
+};

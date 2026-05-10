@@ -21,23 +21,28 @@ import type {
   AdminStats,
   AuthUser,
   Case,
+  ClientDetail,
+  ClientProfile,
   Consultation,
   CreateCaseBody,
   CreateConsultationBody,
   CreateMessageBody,
   CreateServiceBody,
+  Document,
   ErrorResponse,
   HealthStatus,
   ListCasesParams,
   ListConsultationsParams,
   LoginBody,
   Message,
+  RegisterBody,
   Service,
   ServiceCount,
   SuccessResponse,
   UpdateCaseBody,
   UpdateConsultationBody,
   UpdateServiceBody,
+  UploadClientDocumentBody,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -123,6 +128,92 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Register a new client account
+ */
+export const getRegisterUrl = () => {
+  return `/api/auth/register`;
+};
+
+export const register = async (
+  registerBody: RegisterBody,
+  options?: RequestInit,
+): Promise<AuthUser> => {
+  return customFetch<AuthUser>(getRegisterUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(registerBody),
+  });
+};
+
+export const getRegisterMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof register>>,
+    TError,
+    { data: BodyType<RegisterBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof register>>,
+  TError,
+  { data: BodyType<RegisterBody> },
+  TContext
+> => {
+  const mutationKey = ["register"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof register>>,
+    { data: BodyType<RegisterBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return register(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegisterMutationResult = NonNullable<
+  Awaited<ReturnType<typeof register>>
+>;
+export type RegisterMutationBody = BodyType<RegisterBody>;
+export type RegisterMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Register a new client account
+ */
+export const useRegister = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof register>>,
+    TError,
+    { data: BodyType<RegisterBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof register>>,
+  TError,
+  { data: BodyType<RegisterBody> },
+  TContext
+> => {
+  return useMutation(getRegisterMutationOptions(options));
+};
 
 /**
  * @summary Login
@@ -1560,6 +1651,845 @@ export const useDeleteService = <
 > => {
   return useMutation(getDeleteServiceMutationOptions(options));
 };
+
+/**
+ * @summary List cases for the logged-in client
+ */
+export const getListClientCasesUrl = () => {
+  return `/api/client/cases`;
+};
+
+export const listClientCases = async (
+  options?: RequestInit,
+): Promise<Case[]> => {
+  return customFetch<Case[]>(getListClientCasesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListClientCasesQueryKey = () => {
+  return [`/api/client/cases`] as const;
+};
+
+export const getListClientCasesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listClientCases>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listClientCases>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListClientCasesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listClientCases>>> = ({
+    signal,
+  }) => listClientCases({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listClientCases>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListClientCasesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listClientCases>>
+>;
+export type ListClientCasesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List cases for the logged-in client
+ */
+
+export function useListClientCases<
+  TData = Awaited<ReturnType<typeof listClientCases>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listClientCases>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListClientCasesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List messages for a client case
+ */
+export const getListClientCaseMessagesUrl = (id: number) => {
+  return `/api/client/cases/${id}/messages`;
+};
+
+export const listClientCaseMessages = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Message[]> => {
+  return customFetch<Message[]>(getListClientCaseMessagesUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListClientCaseMessagesQueryKey = (id: number) => {
+  return [`/api/client/cases/${id}/messages`] as const;
+};
+
+export const getListClientCaseMessagesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listClientCaseMessages>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listClientCaseMessages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListClientCaseMessagesQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listClientCaseMessages>>
+  > = ({ signal }) => listClientCaseMessages(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listClientCaseMessages>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListClientCaseMessagesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listClientCaseMessages>>
+>;
+export type ListClientCaseMessagesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List messages for a client case
+ */
+
+export function useListClientCaseMessages<
+  TData = Awaited<ReturnType<typeof listClientCaseMessages>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listClientCaseMessages>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListClientCaseMessagesQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Send a message on a client case
+ */
+export const getCreateClientCaseMessageUrl = (id: number) => {
+  return `/api/client/cases/${id}/messages`;
+};
+
+export const createClientCaseMessage = async (
+  id: number,
+  createMessageBody: CreateMessageBody,
+  options?: RequestInit,
+): Promise<Message> => {
+  return customFetch<Message>(getCreateClientCaseMessageUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createMessageBody),
+  });
+};
+
+export const getCreateClientCaseMessageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createClientCaseMessage>>,
+    TError,
+    { id: number; data: BodyType<CreateMessageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createClientCaseMessage>>,
+  TError,
+  { id: number; data: BodyType<CreateMessageBody> },
+  TContext
+> => {
+  const mutationKey = ["createClientCaseMessage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createClientCaseMessage>>,
+    { id: number; data: BodyType<CreateMessageBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createClientCaseMessage(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateClientCaseMessageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createClientCaseMessage>>
+>;
+export type CreateClientCaseMessageMutationBody = BodyType<CreateMessageBody>;
+export type CreateClientCaseMessageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Send a message on a client case
+ */
+export const useCreateClientCaseMessage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createClientCaseMessage>>,
+    TError,
+    { id: number; data: BodyType<CreateMessageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createClientCaseMessage>>,
+  TError,
+  { id: number; data: BodyType<CreateMessageBody> },
+  TContext
+> => {
+  return useMutation(getCreateClientCaseMessageMutationOptions(options));
+};
+
+/**
+ * @summary List documents for the logged-in client
+ */
+export const getListClientDocumentsUrl = () => {
+  return `/api/client/documents`;
+};
+
+export const listClientDocuments = async (
+  options?: RequestInit,
+): Promise<Document[]> => {
+  return customFetch<Document[]>(getListClientDocumentsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListClientDocumentsQueryKey = () => {
+  return [`/api/client/documents`] as const;
+};
+
+export const getListClientDocumentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listClientDocuments>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listClientDocuments>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListClientDocumentsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listClientDocuments>>
+  > = ({ signal }) => listClientDocuments({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listClientDocuments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListClientDocumentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listClientDocuments>>
+>;
+export type ListClientDocumentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List documents for the logged-in client
+ */
+
+export function useListClientDocuments<
+  TData = Awaited<ReturnType<typeof listClientDocuments>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listClientDocuments>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListClientDocumentsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Upload a document (client)
+ */
+export const getUploadClientDocumentUrl = () => {
+  return `/api/client/documents`;
+};
+
+export const uploadClientDocument = async (
+  uploadClientDocumentBody: UploadClientDocumentBody,
+  options?: RequestInit,
+): Promise<Document> => {
+  const formData = new FormData();
+  formData.append(`file`, uploadClientDocumentBody.file);
+  if (uploadClientDocumentBody.caseId !== undefined) {
+    formData.append(`caseId`, uploadClientDocumentBody.caseId.toString());
+  }
+
+  return customFetch<Document>(getUploadClientDocumentUrl(), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getUploadClientDocumentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadClientDocument>>,
+    TError,
+    { data: BodyType<UploadClientDocumentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof uploadClientDocument>>,
+  TError,
+  { data: BodyType<UploadClientDocumentBody> },
+  TContext
+> => {
+  const mutationKey = ["uploadClientDocument"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof uploadClientDocument>>,
+    { data: BodyType<UploadClientDocumentBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return uploadClientDocument(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UploadClientDocumentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof uploadClientDocument>>
+>;
+export type UploadClientDocumentMutationBody =
+  BodyType<UploadClientDocumentBody>;
+export type UploadClientDocumentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Upload a document (client)
+ */
+export const useUploadClientDocument = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof uploadClientDocument>>,
+    TError,
+    { data: BodyType<UploadClientDocumentBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof uploadClientDocument>>,
+  TError,
+  { data: BodyType<UploadClientDocumentBody> },
+  TContext
+> => {
+  return useMutation(getUploadClientDocumentMutationOptions(options));
+};
+
+/**
+ * @summary Delete a client document
+ */
+export const getDeleteClientDocumentUrl = (id: number) => {
+  return `/api/client/documents/${id}`;
+};
+
+export const deleteClientDocument = async (
+  id: number,
+  options?: RequestInit,
+): Promise<SuccessResponse> => {
+  return customFetch<SuccessResponse>(getDeleteClientDocumentUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteClientDocumentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteClientDocument>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteClientDocument>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteClientDocument"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteClientDocument>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteClientDocument(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteClientDocumentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteClientDocument>>
+>;
+
+export type DeleteClientDocumentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a client document
+ */
+export const useDeleteClientDocument = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteClientDocument>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteClientDocument>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteClientDocumentMutationOptions(options));
+};
+
+/**
+ * @summary List all client accounts (admin only)
+ */
+export const getListClientsUrl = () => {
+  return `/api/admin/clients`;
+};
+
+export const listClients = async (
+  options?: RequestInit,
+): Promise<ClientProfile[]> => {
+  return customFetch<ClientProfile[]>(getListClientsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListClientsQueryKey = () => {
+  return [`/api/admin/clients`] as const;
+};
+
+export const getListClientsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listClients>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listClients>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListClientsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listClients>>> = ({
+    signal,
+  }) => listClients({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listClients>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListClientsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listClients>>
+>;
+export type ListClientsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all client accounts (admin only)
+ */
+
+export function useListClients<
+  TData = Awaited<ReturnType<typeof listClients>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listClients>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListClientsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get client profile with stats (admin only)
+ */
+export const getGetClientProfileUrl = (id: number) => {
+  return `/api/admin/clients/${id}`;
+};
+
+export const getClientProfile = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ClientDetail> => {
+  return customFetch<ClientDetail>(getGetClientProfileUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetClientProfileQueryKey = (id: number) => {
+  return [`/api/admin/clients/${id}`] as const;
+};
+
+export const getGetClientProfileQueryOptions = <
+  TData = Awaited<ReturnType<typeof getClientProfile>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getClientProfile>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetClientProfileQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getClientProfile>>
+  > = ({ signal }) => getClientProfile(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getClientProfile>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetClientProfileQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getClientProfile>>
+>;
+export type GetClientProfileQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get client profile with stats (admin only)
+ */
+
+export function useGetClientProfile<
+  TData = Awaited<ReturnType<typeof getClientProfile>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getClientProfile>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetClientProfileQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List documents for a client (admin only)
+ */
+export const getListClientDocumentsAdminUrl = (id: number) => {
+  return `/api/admin/clients/${id}/documents`;
+};
+
+export const listClientDocumentsAdmin = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Document[]> => {
+  return customFetch<Document[]>(getListClientDocumentsAdminUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListClientDocumentsAdminQueryKey = (id: number) => {
+  return [`/api/admin/clients/${id}/documents`] as const;
+};
+
+export const getListClientDocumentsAdminQueryOptions = <
+  TData = Awaited<ReturnType<typeof listClientDocumentsAdmin>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listClientDocumentsAdmin>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListClientDocumentsAdminQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listClientDocumentsAdmin>>
+  > = ({ signal }) =>
+    listClientDocumentsAdmin(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listClientDocumentsAdmin>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListClientDocumentsAdminQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listClientDocumentsAdmin>>
+>;
+export type ListClientDocumentsAdminQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List documents for a client (admin only)
+ */
+
+export function useListClientDocumentsAdmin<
+  TData = Awaited<ReturnType<typeof listClientDocumentsAdmin>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listClientDocumentsAdmin>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListClientDocumentsAdminQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Download a document file
+ */
+export const getDownloadDocumentUrl = (id: number) => {
+  return `/api/documents/${id}/download`;
+};
+
+export const downloadDocument = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getDownloadDocumentUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDownloadDocumentQueryKey = (id: number) => {
+  return [`/api/documents/${id}/download`] as const;
+};
+
+export const getDownloadDocumentQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadDocument>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadDocument>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getDownloadDocumentQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadDocument>>
+  > = ({ signal }) => downloadDocument(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadDocument>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadDocumentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadDocument>>
+>;
+export type DownloadDocumentQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Download a document file
+ */
+
+export function useDownloadDocument<
+  TData = Awaited<ReturnType<typeof downloadDocument>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadDocument>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadDocumentQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get admin dashboard statistics

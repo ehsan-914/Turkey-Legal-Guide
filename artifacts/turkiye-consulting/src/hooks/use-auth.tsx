@@ -1,6 +1,6 @@
 import { createContext, useContext, ReactNode } from "react";
-import { AuthUser, LoginBody } from "@workspace/api-client-react";
-import { useGetMe, getGetMeQueryKey, useLogin, useLogout } from "@workspace/api-client-react";
+import { AuthUser, LoginBody, RegisterBody } from "@workspace/api-client-react";
+import { useGetMe, getGetMeQueryKey, useLogin, useLogout, useRegister } from "@workspace/api-client-react";
 import { useQueryClient, UseMutateFunction } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 
@@ -9,6 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: UseMutateFunction<AuthUser, unknown, { data: LoginBody }, unknown>;
   logout: UseMutateFunction<unknown, unknown, void, unknown>;
+  register: UseMutateFunction<AuthUser, unknown, { data: RegisterBody }, unknown>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -29,7 +30,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutation: {
       onSuccess: (data) => {
         queryClient.setQueryData(getGetMeQueryKey(), data);
-        setLocation("/admin");
+        if (data.role === "admin") {
+          setLocation("/admin");
+        } else {
+          setLocation("/client/dashboard");
+        }
+      },
+    }
+  });
+
+  const registerMutation = useRegister({
+    mutation: {
+      onSuccess: (data) => {
+        queryClient.setQueryData(getGetMeQueryKey(), data);
+        setLocation("/client/dashboard");
       },
     }
   });
@@ -38,12 +52,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     mutation: {
       onSuccess: () => {
         queryClient.setQueryData(getGetMeQueryKey(), null);
-        setLocation("/admin/login");
+        setLocation("/");
       },
     }
   });
 
-  // If there's an error getting user (e.g. 401), we consider user as null.
   const actualUser = error ? null : (user ?? null);
 
   return (
@@ -51,7 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: actualUser,
       isLoading,
       login: loginMutation.mutate,
-      logout: logoutMutation.mutate
+      logout: logoutMutation.mutate,
+      register: registerMutation.mutate,
     }}>
       {children}
     </AuthContext.Provider>

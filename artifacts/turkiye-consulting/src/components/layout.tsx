@@ -31,6 +31,9 @@ export function PublicLayout({ children }: { children: ReactNode }) {
             <Link href="/contact" className="hidden sm:inline-flex">
               <Button>درخواست مشاوره</Button>
             </Link>
+            <Link href="/client/login" className="hidden sm:inline-flex">
+              <Button variant="outline">ورود مشتری</Button>
+            </Link>
             <Link href="/admin/login" className="text-xs text-muted-foreground hover:text-foreground hidden md:inline-block">
               ورود مدیر
             </Link>
@@ -47,6 +50,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
                   <Link href="/" className="text-base font-medium py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>خانه</Link>
                   <Link href="/services" className="text-base font-medium py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>خدمات</Link>
                   <Link href="/contact" className="text-base font-medium py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>تماس با ما</Link>
+                  <Link href="/client/login" className="text-base font-medium py-2 border-b border-border" onClick={() => setMobileMenuOpen(false)}>ورود مشتری</Link>
                   <Link href="/admin/login" className="text-sm text-muted-foreground py-2" onClick={() => setMobileMenuOpen(false)}>ورود مدیر</Link>
                   <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>
                     <Button className="w-full mt-4">درخواست مشاوره</Button>
