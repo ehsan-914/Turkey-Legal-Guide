@@ -1,0 +1,11 @@
+# Vercel ignore patterns
+.replit
+.replitignore
+replit.md
+scripts/
+lib/integrations/
+artifacts/api-server/
+artifacts/*/src/
+.gitignore
+node_modules/
+*.md
